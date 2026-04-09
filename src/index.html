@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mux</title>
+    <script type="module" src="/main.js" defer></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Permission card (shown when AX permission not granted) -->
+      <div id="permission-card" class="state-card" style="display: none">
+        <div class="state-icon">&#x1F512;</div>
+        <p class="state-title">Mux needs Accessibility permission</p>
+        <p class="state-desc">
+          System Settings &gt; Privacy &amp; Security &gt; Accessibility
+        </p>
+        <button id="open-settings-btn" class="action-btn">Open Settings</button>
+      </div>
+
+      <!-- Empty state (no dev tools running) -->
+      <div id="empty-state" class="state-card" style="display: none">
+        <p class="state-title" style="opacity: 0.5">No developer tools running</p>
+        <p class="state-desc">Open VSCode or Cursor to get started</p>
+      </div>
+
+      <!-- Project list -->
+      <div id="project-list"></div>
+
+      <!-- Footer -->
+      <div id="footer">Mux v0.1</div>
+    </div>
+  </body>
+</html>
