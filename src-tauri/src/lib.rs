@@ -4,6 +4,7 @@ mod path_resolver;
 mod title_parser;
 
 use serde::Serialize;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{
     image::Image,
@@ -101,11 +102,14 @@ fn refresh_projects(app: &AppHandle) {
     let _ = app.emit("projects-updated", ());
 }
 
+static POPOVER_VISIBLE: AtomicBool = AtomicBool::new(false);
+
 // --- Popover management ---
 
 fn toggle_popover(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("popover") {
         if window.is_visible().unwrap_or(false) {
+            POPOVER_VISIBLE.store(false, Ordering::Relaxed);
             let _ = window.hide();
         } else {
             // Refresh projects before showing
@@ -115,6 +119,7 @@ fn toggle_popover(app: &AppHandle) {
             }
             let _ = window.show();
             let _ = window.set_focus();
+            POPOVER_VISIBLE.store(true, Ordering::Relaxed);
         }
     } else {
         // Create the popover window
@@ -140,6 +145,7 @@ fn toggle_popover(app: &AppHandle) {
             }
             let _ = window.show();
             let _ = window.set_focus();
+            POPOVER_VISIBLE.store(true, Ordering::Relaxed);
         }
     }
 }
@@ -185,11 +191,13 @@ pub fn run() {
                 }
             });
 
-            // Start reconciliation poll (5 second interval)
+            // Reconciliation poll — only refreshes when popover is visible
             let poll_handle = app.handle().clone();
             std::thread::spawn(move || loop {
                 std::thread::sleep(std::time::Duration::from_secs(5));
-                refresh_projects(poll_handle.app_handle());
+                if POPOVER_VISIBLE.load(Ordering::Relaxed) {
+                    refresh_projects(poll_handle.app_handle());
+                }
             });
 
             Ok(())
@@ -198,14 +206,23 @@ pub fn run() {
             // Hide popover when it loses focus (but not immediately on creation)
             if window.label() == "popover" {
                 match event {
+                    tauri::WindowEvent::Focused(true) => {
+                        POPOVER_VISIBLE.store(true, Ordering::Relaxed);
+                    }
                     tauri::WindowEvent::Focused(false) => {
+                        POPOVER_VISIBLE.store(false, Ordering::Relaxed);
                         let w = window.clone();
                         std::thread::spawn(move || {
                             std::thread::sleep(std::time::Duration::from_millis(150));
                             if !w.is_focused().unwrap_or(true) {
                                 let _ = w.hide();
+                            } else {
+                                POPOVER_VISIBLE.store(true, Ordering::Relaxed);
                             }
                         });
+                    }
+                    tauri::WindowEvent::Destroyed => {
+                        POPOVER_VISIBLE.store(false, Ordering::Relaxed);
                     }
                     _ => {}
                 }
