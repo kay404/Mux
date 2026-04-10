@@ -40,7 +40,7 @@ function renderProjects(projects) {
     const groupEl = document.createElement("div");
     groupEl.className = "app-group";
 
-    // App header
+    // App header with window count badge
     const headerEl = document.createElement("div");
     headerEl.className = "app-header";
     if (group.icon) {
@@ -52,6 +52,13 @@ function renderProjects(projects) {
     const nameEl = document.createElement("span");
     nameEl.textContent = appName;
     headerEl.appendChild(nameEl);
+
+    // Window count badge
+    const badgeEl = document.createElement("span");
+    badgeEl.className = "badge";
+    badgeEl.textContent = group.projects.length;
+    headerEl.appendChild(badgeEl);
+
     groupEl.appendChild(headerEl);
 
     // Project rows
@@ -65,9 +72,10 @@ function renderProjects(projects) {
         `${appName}, ${p.project_name}${p.full_path ? ", " + p.full_path : ""}`
       );
 
-      const dotEl = document.createElement("div");
-      dotEl.className = "dot";
-      rowEl.appendChild(dotEl);
+      // Gradient pill indicator (replaces dot)
+      const indicatorEl = document.createElement("div");
+      indicatorEl.className = "indicator";
+      rowEl.appendChild(indicatorEl);
 
       const pNameEl = document.createElement("span");
       pNameEl.className = "project-name";
@@ -114,7 +122,6 @@ async function focusProject(project) {
       pid: project.pid,
       windowIndex: project.window_index,
     });
-    // Hide popover after focusing
     const win = getCurrentWindow();
     await win.hide();
   } catch (e) {
@@ -161,7 +168,6 @@ function updateFocus() {
 // --- Init ---
 
 async function init() {
-  // Check accessibility permission
   const trusted = await invoke("check_accessibility_permission");
   if (!trusted) {
     showPermissionCard();
@@ -170,7 +176,6 @@ async function init() {
       await invoke("request_accessibility_permission");
     });
 
-    // Poll for permission grant
     const permInterval = setInterval(async () => {
       const nowTrusted = await invoke("check_accessibility_permission");
       if (nowTrusted) {
@@ -192,7 +197,6 @@ async function loadProjects() {
 
 // Listen for updates from the Rust backend
 listen("projects-updated", async () => {
-  // Don't refresh if permission hasn't been granted yet (would hide the permission card)
   const trusted = await invoke("check_accessibility_permission");
   if (!trusted) return;
 

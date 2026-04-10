@@ -57,52 +57,27 @@ fn request_accessibility_permission() -> bool {
 // --- Refresh logic ---
 
 fn refresh_projects(app: &AppHandle) {
-    let trusted = accessibility::is_trusted();
-    eprintln!("[Mux] refresh_projects: AX trusted = {}", trusted);
-
     let dev_apps = accessibility::DEV_APPS;
     let mut all_projects = Vec::new();
 
     for dev_app in dev_apps {
         let pids = accessibility::find_pids_for_bundle_id(dev_app.bundle_id);
-        eprintln!(
-            "[Mux] {} ({}): found {} PIDs: {:?}",
-            dev_app.name,
-            dev_app.bundle_id,
-            pids.len(),
-            pids
-        );
 
         for pid in pids {
             let titles = accessibility::get_window_titles(pid);
-            eprintln!(
-                "[Mux]   PID {}: {} window titles: {:?}",
-                pid,
-                titles.len(),
-                titles
-            );
             let icon = icon_cache::get_icon_data_uri(dev_app.bundle_id);
 
             for (ax_index, title) in titles.iter().enumerate() {
                 let project_name =
                     match title_parser::parse_project_name(title, dev_app.title_suffix) {
                         Some(name) => name,
-                        None => {
-                            eprintln!("[Mux]   Could not parse project from: \"{}\"", title);
-                            continue;
-                        }
+                        None => continue,
                     };
 
                 let full_path =
                     path_resolver::resolve_path(&project_name, dev_app.storage_path);
 
-                eprintln!(
-                    "[Mux]   -> {} (ax_index={}) | path: {:?}",
-                    project_name, ax_index, full_path
-                );
-
-                // Use ax_index (position in the raw AXWindows array), NOT a
-                // filtered counter, so focus_window targets the correct window.
+                // ax_index = position in raw AXWindows array, used by focus_window
                 all_projects.push(ProjectInfo {
                     app_name: dev_app.name.to_string(),
                     bundle_id: dev_app.bundle_id.to_string(),
@@ -115,8 +90,6 @@ fn refresh_projects(app: &AppHandle) {
             }
         }
     }
-
-    eprintln!("[Mux] Total projects detected: {}", all_projects.len());
 
     // Update state
     if let Some(state) = app.try_state::<Mutex<AppState>>() {
@@ -137,25 +110,34 @@ fn toggle_popover(app: &AppHandle) {
         } else {
             // Refresh projects before showing
             refresh_projects(app);
-            let _ = window.move_window(Position::TrayBottomCenter);
+            if window.move_window(Position::TrayBottomCenter).is_err() {
+                let _ = window.set_position(tauri::PhysicalPosition::new(800, 30));
+            }
             let _ = window.show();
             let _ = window.set_focus();
         }
     } else {
         // Create the popover window
         refresh_projects(app);
+
         let window = WebviewWindowBuilder::new(app, "popover", WebviewUrl::default())
             .title("Mux")
-            .inner_size(320.0, 400.0)
+            .inner_size(336.0, 416.0) // 320+16, 400+16 for 8px body padding
             .resizable(false)
             .decorations(false)
+            .transparent(true)
             .always_on_top(true)
             .skip_taskbar(true)
             .visible(false)
             .build();
 
         if let Ok(window) = window {
-            let _ = window.move_window(Position::TrayBottomCenter);
+            // Apply native macOS vibrancy + transparency via Objective-C runtime
+            apply_macos_vibrancy(&window);
+            // Position below tray icon (fallback to top-right if tray position unknown)
+            if window.move_window(Position::TrayBottomCenter).is_err() {
+                let _ = window.set_position(tauri::PhysicalPosition::new(800, 30));
+            }
             let _ = window.show();
             let _ = window.set_focus();
         }
@@ -217,10 +199,9 @@ pub fn run() {
             if window.label() == "popover" {
                 match event {
                     tauri::WindowEvent::Focused(false) => {
-                        // Small delay to avoid hiding on initial focus dance
                         let w = window.clone();
                         std::thread::spawn(move || {
-                            std::thread::sleep(std::time::Duration::from_millis(100));
+                            std::thread::sleep(std::time::Duration::from_millis(150));
                             if !w.is_focused().unwrap_or(true) {
                                 let _ = w.hide();
                             }
@@ -232,6 +213,91 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running Mux");
+}
+
+/// Apply native macOS vibrancy + transparency + rounded corners.
+#[cfg(target_os = "macos")]
+fn apply_macos_vibrancy(window: &tauri::WebviewWindow) {
+    let ns_win = match window.ns_window() {
+        Ok(w) => w as *mut std::ffi::c_void,
+        Err(_) => return,
+    };
+    use std::ffi::c_void;
+
+    extern "C" {
+        fn objc_getClass(name: *const libc::c_char) -> *mut c_void;
+        fn sel_registerName(name: *const libc::c_char) -> *mut c_void;
+        fn objc_msgSend(receiver: *mut c_void, sel: *mut c_void, ...) -> *mut c_void;
+    }
+
+    unsafe {
+        // 1. window.backgroundColor = NSColor.clearColor
+        let nscolor_cls = objc_getClass(b"NSColor\0".as_ptr() as *const libc::c_char);
+        let clear_sel = sel_registerName(b"clearColor\0".as_ptr() as *const libc::c_char);
+        let clear_color = objc_msgSend(nscolor_cls, clear_sel);
+        let set_bg_sel = sel_registerName(b"setBackgroundColor:\0".as_ptr() as *const libc::c_char);
+        objc_msgSend(ns_win, set_bg_sel, clear_color);
+
+        // 2. window.isOpaque = false (BOOL = i8 on macOS)
+        let set_opaque_sel = sel_registerName(b"setOpaque:\0".as_ptr() as *const libc::c_char);
+        let send_bool: extern "C" fn(*mut c_void, *mut c_void, i8) -> *mut c_void =
+            std::mem::transmute(objc_msgSend as *const c_void);
+        send_bool(ns_win, set_opaque_sel, 0);
+
+        // 3. Get contentView
+        let content_view_sel = sel_registerName(b"contentView\0".as_ptr() as *const libc::c_char);
+        let content_view = objc_msgSend(ns_win, content_view_sel);
+
+        // 4. Create NSVisualEffectView with NSZeroRect (autoresizing will fill)
+        let ve_cls = objc_getClass(b"NSVisualEffectView\0".as_ptr() as *const libc::c_char);
+        let alloc_sel = sel_registerName(b"alloc\0".as_ptr() as *const libc::c_char);
+        let ve = objc_msgSend(ve_cls, alloc_sel);
+
+        #[repr(C)]
+        #[derive(Copy, Clone)]
+        struct NSRect { x: f64, y: f64, w: f64, h: f64 }
+
+        // Inset 8px on all sides to match CSS body padding (window is 336x416, content is 320x400)
+        let inset_rect = NSRect { x: 8.0, y: 8.0, w: 320.0, h: 400.0 };
+        let init_frame_sel = sel_registerName(b"initWithFrame:\0".as_ptr() as *const libc::c_char);
+        let init_ve: extern "C" fn(*mut c_void, *mut c_void, NSRect) -> *mut c_void =
+            std::mem::transmute(objc_msgSend as *const c_void);
+        let ve = init_ve(ve, init_frame_sel, inset_rect);
+
+        // Configure vibrancy
+        objc_msgSend(ve, sel_registerName(b"setMaterial:\0".as_ptr() as *const libc::c_char), 13u64); // hudWindow
+        objc_msgSend(ve, sel_registerName(b"setBlendingMode:\0".as_ptr() as *const libc::c_char), 0u64); // behindWindow
+        objc_msgSend(ve, sel_registerName(b"setState:\0".as_ptr() as *const libc::c_char), 1u64); // active
+        // NO autoresizing — fixed frame matching CSS container
+
+        // Corner radius + clip on the vibrancy view
+        send_bool(ve, sel_registerName(b"setWantsLayer:\0".as_ptr() as *const libc::c_char), 1);
+        let layer = objc_msgSend(ve, sel_registerName(b"layer\0".as_ptr() as *const libc::c_char));
+        if !layer.is_null() {
+            let set_f64: extern "C" fn(*mut c_void, *mut c_void, f64) -> *mut c_void =
+                std::mem::transmute(objc_msgSend as *const c_void);
+            set_f64(layer, sel_registerName(b"setCornerRadius:\0".as_ptr() as *const libc::c_char), 12.0);
+            send_bool(layer, sel_registerName(b"setMasksToBounds:\0".as_ptr() as *const libc::c_char), 1);
+        }
+
+        // 10. Clip the contentView itself (this is what actually clips the webview)
+        send_bool(content_view, sel_registerName(b"setWantsLayer:\0".as_ptr() as *const libc::c_char), 1);
+        let cv_layer = objc_msgSend(content_view, sel_registerName(b"layer\0".as_ptr() as *const libc::c_char));
+        if !cv_layer.is_null() {
+            let set_f64: extern "C" fn(*mut c_void, *mut c_void, f64) -> *mut c_void =
+                std::mem::transmute(objc_msgSend as *const c_void);
+            set_f64(cv_layer, sel_registerName(b"setCornerRadius:\0".as_ptr() as *const libc::c_char), 12.0);
+            send_bool(cv_layer, sel_registerName(b"setMasksToBounds:\0".as_ptr() as *const libc::c_char), 1);
+        }
+        // Window shadow
+        send_bool(ns_win, sel_registerName(b"setHasShadow:\0".as_ptr() as *const libc::c_char), 1);
+
+        // Add visual effect view behind web content
+        let add_sub_sel = sel_registerName(b"addSubview:positioned:relativeTo:\0".as_ptr() as *const libc::c_char);
+        let add_positioned: extern "C" fn(*mut c_void, *mut c_void, *mut c_void, i64, *mut c_void) -> *mut c_void =
+            std::mem::transmute(objc_msgSend as *const c_void);
+        add_positioned(content_view, add_sub_sel, ve, -1i64, std::ptr::null_mut());
+    }
 }
 
 fn create_tray_icon(
