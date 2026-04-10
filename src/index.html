@@ -9,7 +9,7 @@
   </head>
   <body>
     <div id="app">
-      <!-- Permission card (shown when AX permission not granted) -->
+      <!-- Permission card -->
       <div id="permission-card" class="state-card" style="display: none">
         <div class="state-icon">&#x1F512;</div>
         <p class="state-title">Mux needs Accessibility permission</p>
@@ -19,9 +19,9 @@
         <button id="open-settings-btn" class="action-btn">Open Settings</button>
       </div>
 
-      <!-- Empty state (no dev tools running) -->
+      <!-- Empty state -->
       <div id="empty-state" class="state-card" style="display: none">
-        <p class="state-title" style="opacity: 0.5">No developer tools running</p>
+        <p class="state-title" style="color: var(--on-surface-variant)">No developer tools running</p>
         <p class="state-desc">Open VSCode or Cursor to get started</p>
       </div>
 

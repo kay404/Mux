@@ -1,26 +1,84 @@
+/* =========================================
+   Mux — The Neon Terminal Design System
+   ========================================= */
+
+/* Local fonts — no network dependency */
+@font-face { font-family: 'Space Grotesk'; font-weight: 400; src: url('./fonts/SpaceGrotesk-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 500; src: url('./fonts/SpaceGrotesk-Medium.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 600; src: url('./fonts/SpaceGrotesk-SemiBold.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-weight: 700; src: url('./fonts/SpaceGrotesk-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-weight: 400; src: url('./fonts/Inter-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-weight: 500; src: url('./fonts/Inter-Medium.ttf') format('truetype'); }
+
+:root {
+  /* Surface hierarchy */
+  --surface:                   #060e20;
+  --surface-container-lowest:  #000000;
+  --surface-container-low:     #0a1428;
+  --surface-container:         #0f1930;
+  --surface-container-high:    #141e38;
+  --surface-container-highest: #192540;
+  --surface-bright:            #ffffff;
+  --surface-variant:           rgba(25, 37, 64, 0.75);
+  --surface-tint:              #ba9eff;
+
+  /* Text */
+  --on-surface:                #dee5ff;
+  --on-surface-variant:        #8892ab;
+  --on-primary-container:      #c4d0ff;
+
+  /* Accent */
+  --primary:                   #ba9eff;
+  --primary-dim:               #8b6fcc;
+  --primary-container:         rgba(186, 158, 255, 0.12);
+  --secondary:                 #699cff;
+  --secondary-dim:             #4a7ad9;
+
+  /* Gradient */
+  --gradient-accent:           linear-gradient(135deg, #699cff, #ba9eff);
+
+  /* Outline */
+  --outline-variant:           rgba(136, 146, 171, 0.15);
+
+  /* Sizing */
+  --radius-sm:   0.25rem;  /* 4px */
+  --radius-md:   0.375rem; /* 6px */
+  --radius-lg:   0.5rem;   /* 8px */
+  --radius-full: 9999px;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  background: transparent !important;
+  overflow: hidden;
+}
+
 body {
-  font-family: -apple-system, "SF Pro", "Helvetica Neue", sans-serif;
+  background: transparent !important;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 13px;
-  color: #ffffff;
-  background: rgba(30, 30, 30, 0.85);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  color: var(--on-surface);
   user-select: none;
   cursor: default;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 8px;
+  overflow: hidden;
+  height: 100vh;
 }
 
 #app {
-  min-height: 100vh;
+  height: calc(100vh - 16px);
   display: flex;
   flex-direction: column;
+  background: rgba(6, 14, 32, 0.45);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 /* --- State cards (permission, empty) --- */
@@ -30,107 +88,129 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
+  padding: 40px 24px;
   text-align: center;
   flex: 1;
 }
 
 .state-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
-  opacity: 0.6;
+  font-size: 36px;
+  margin-bottom: 16px;
+  opacity: 0.5;
 }
 
 .state-title {
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 8px;
 }
 
 .state-desc {
-  font-size: 11px;
-  color: #666;
-  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  margin-bottom: 20px;
+  line-height: 1.5;
 }
 
 .action-btn {
-  background: #007AFF;
-  color: #fff;
+  background: var(--gradient-accent);
+  color: var(--surface);
   border: none;
-  border-radius: 6px;
-  padding: 6px 16px;
+  border-radius: var(--radius-md);
+  padding: 8px 20px;
   font-size: 12px;
+  font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif;
   cursor: pointer;
-  font-family: inherit;
+  transition: opacity 0.15s;
 }
 
 .action-btn:hover {
-  background: #0066d6;
+  opacity: 0.85;
 }
 
 /* --- Project list --- */
 
 #project-list {
   flex: 1;
-  padding: 4px 0;
+  padding: 8px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .app-group {
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .app-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px 4px 12px;
+  padding: 10px 16px 6px 16px;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 11px;
   font-weight: 600;
-  color: #999;
+  color: var(--on-surface-variant);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
 .app-header img {
   width: 16px;
   height: 16px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* Window count badge */
+.app-header .badge {
+  margin-left: auto;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--on-primary-container);
+  background: var(--primary-container);
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
 }
 
 .project-row {
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  height: 32px;
+  padding: 0 12px 0 16px;
+  height: 34px;
   cursor: pointer;
-  border-radius: 4px;
-  margin: 0 4px;
-  transition: background 0.1s;
+  border-radius: var(--radius-sm);
+  margin: 1px 6px;
+  transition: background 0.12s ease;
+  position: relative;
 }
 
 .project-row:hover,
 .project-row.focused {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.project-row .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #007AFF;
-  margin-right: 8px;
+/* Active indicator: gradient pill on left edge */
+.project-row .indicator {
+  width: 2px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  margin-right: 10px;
   flex-shrink: 0;
-  visibility: hidden;
+  background: transparent;
 }
 
-.project-row.active .dot {
-  visibility: visible;
+.project-row.active .indicator {
+  background: var(--gradient-accent);
 }
 
 .project-name {
   flex: 1;
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 500;
+  color: var(--on-surface);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -138,36 +218,40 @@ body {
 
 .project-path {
   font-size: 11px;
-  color: #666;
+  color: var(--on-surface-variant);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
+  max-width: 140px;
   text-align: right;
   margin-left: 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* --- Footer --- */
 
 #footer {
-  padding: 6px 12px;
+  padding: 8px 16px;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 10px;
-  color: #444;
+  font-weight: 500;
+  color: var(--on-surface-variant);
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(6, 14, 32, 0.25);
 }
 
 /* --- Keyboard focus --- */
 
 .project-row:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px var(--outline-variant);
 }
 
 /* --- Scrollbar --- */
 
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -175,6 +259,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
+  background: rgba(186, 158, 255, 0.15);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(186, 158, 255, 0.3);
 }
