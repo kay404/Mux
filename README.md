@@ -26,7 +26,7 @@ You have 6+ VSCode windows open. Cmd+Tab shows 30 windows across all apps. Findi
 - Real app icons from each IDE's .app bundle
 - Keyboard navigation (Arrow keys, Enter, Escape)
 - Dark theme with macOS vibrancy blur
-- 5-second background refresh keeps the list current
+- 5-second background refresh keeps the list current (only polls when popover is visible)
 - First-launch Accessibility permission flow
 - No configuration needed
 
