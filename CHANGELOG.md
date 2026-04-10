@@ -2,7 +2,7 @@
 
 All notable changes to Mux will be documented in this file.
 
-## [0.1.0.1] - 2026-04-10
+## [0.1.1] - 2026-04-10
 
 ### Changed
 - Background polling now only runs when the popover is visible, reducing idle CPU and memory usage
