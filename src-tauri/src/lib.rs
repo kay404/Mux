@@ -12,7 +12,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder,
 };
-use tauri_plugin_positioner::{Position, WindowExt};
+use tauri::PhysicalPosition;
 
 // --- Shared state ---
 
@@ -30,6 +30,7 @@ pub struct ProjectInfo {
 #[derive(Default)]
 pub struct AppState {
     pub projects: Vec<ProjectInfo>,
+    pub tray_position: Option<PhysicalPosition<i32>>,
 }
 
 // --- Tauri commands ---
@@ -106,23 +107,37 @@ static POPOVER_VISIBLE: AtomicBool = AtomicBool::new(false);
 
 // --- Popover management ---
 
+/// Position window centered below the tray icon using our own saved position.
+fn position_near_tray(app: &AppHandle, window: &tauri::WebviewWindow) {
+    let tray_pos = app
+        .try_state::<Mutex<AppState>>()
+        .and_then(|s| s.lock().ok()?.tray_position);
+
+    if let Some(pos) = tray_pos {
+        let win_width = window
+            .outer_size()
+            .map(|s| s.width as i32)
+            .unwrap_or(336);
+        let x = pos.x - win_width / 2;
+        let _ = window.set_position(PhysicalPosition::new(x, pos.y));
+    } else {
+        let _ = window.set_position(PhysicalPosition::new(800, 30));
+    }
+}
+
 fn toggle_popover(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("popover") {
         if window.is_visible().unwrap_or(false) {
             POPOVER_VISIBLE.store(false, Ordering::Relaxed);
             let _ = window.hide();
         } else {
-            // Refresh projects before showing
             refresh_projects(app);
-            if window.move_window(Position::TrayBottomCenter).is_err() {
-                let _ = window.set_position(tauri::PhysicalPosition::new(800, 30));
-            }
+            position_near_tray(app, &window);
             let _ = window.show();
             let _ = window.set_focus();
             POPOVER_VISIBLE.store(true, Ordering::Relaxed);
         }
     } else {
-        // Create the popover window
         refresh_projects(app);
 
         let window = WebviewWindowBuilder::new(app, "popover", WebviewUrl::default())
@@ -137,12 +152,8 @@ fn toggle_popover(app: &AppHandle) {
             .build();
 
         if let Ok(window) = window {
-            // Apply native macOS vibrancy + transparency via Objective-C runtime
             apply_macos_vibrancy(&window);
-            // Position below tray icon (fallback to top-right if tray position unknown)
-            if window.move_window(Position::TrayBottomCenter).is_err() {
-                let _ = window.set_position(tauri::PhysicalPosition::new(800, 30));
-            }
+            position_near_tray(app, &window);
             let _ = window.show();
             let _ = window.set_focus();
             POPOVER_VISIBLE.store(true, Ordering::Relaxed);
@@ -155,7 +166,6 @@ fn toggle_popover(app: &AppHandle) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_positioner::init())
         .manage(Mutex::new(AppState::default()))
         .invoke_handler(tauri::generate_handler![
             get_projects,
@@ -177,16 +187,24 @@ pub fn run() {
             // Listen for tray events
             let app_handle = app.handle().clone();
             tray_icon.on_tray_icon_event(move |_tray, event| {
-                tauri_plugin_positioner::on_tray_event(
-                    app_handle.app_handle(),
-                    &event,
-                );
                 if let TrayIconEvent::Click {
                     button: MouseButton::Left,
                     button_state: MouseButtonState::Up,
+                    rect,
                     ..
                 } = event
                 {
+                    // Save tray icon position for window placement
+                    let pos: PhysicalPosition<i32> = rect.position.to_physical(1.0);
+                    let size = rect.size.to_physical::<i32>(1.0);
+                    if let Some(state) = app_handle.try_state::<Mutex<AppState>>() {
+                        if let Ok(mut s) = state.lock() {
+                            s.tray_position = Some(PhysicalPosition::new(
+                                pos.x as i32 + size.width / 2,
+                                pos.y as i32 + size.height,
+                            ));
+                        }
+                    }
                     toggle_popover(app_handle.app_handle());
                 }
             });
