@@ -9,10 +9,17 @@
   </head>
   <body>
     <div id="app">
+      <!-- Header -->
+      <div id="header">
+        <span class="app-title">Mux</span>
+        <span class="version">v0.1.1</span>
+      </div>
+      <div class="divider"></div>
+
       <!-- Permission card -->
       <div id="permission-card" class="state-card" style="display: none">
         <div class="state-icon">&#x1F512;</div>
-        <p class="state-title">Mux needs Accessibility permission</p>
+        <p class="state-title">Accessibility Permission Required</p>
         <p class="state-desc">
           System Settings &gt; Privacy &amp; Security &gt; Accessibility
         </p>
@@ -21,7 +28,7 @@
 
       <!-- Empty state -->
       <div id="empty-state" class="state-card" style="display: none">
-        <p class="state-title" style="color: var(--on-surface-variant)">No developer tools running</p>
+        <p class="state-title" style="color: var(--text-secondary)">No developer tools running</p>
         <p class="state-desc">Open VSCode or Cursor to get started</p>
       </div>
 
@@ -29,6 +36,7 @@
       <div id="project-list"></div>
 
       <!-- Footer -->
+      <div class="divider"></div>
       <div id="footer">Mux v0.1.1</div>
     </div>
   </body>
