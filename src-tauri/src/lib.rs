@@ -300,7 +300,7 @@ fn apply_macos_vibrancy(window: &tauri::WebviewWindow) {
         let ve = init_ve(ve, init_frame_sel, inset_rect);
 
         // Configure vibrancy
-        objc_msgSend(ve, sel_registerName(b"setMaterial:\0".as_ptr() as *const libc::c_char), 13u64); // hudWindow
+        objc_msgSend(ve, sel_registerName(b"setMaterial:\0".as_ptr() as *const libc::c_char), 3u64); // popover
         objc_msgSend(ve, sel_registerName(b"setBlendingMode:\0".as_ptr() as *const libc::c_char), 0u64); // behindWindow
         objc_msgSend(ve, sel_registerName(b"setState:\0".as_ptr() as *const libc::c_char), 1u64); // active
         // NO autoresizing — fixed frame matching CSS container

@@ -1,50 +1,27 @@
 /* =========================================
-   Mux — The Neon Terminal Design System
+   Mux — Native macOS Popover Style
+   Inspired by Switzy's clean design
    ========================================= */
 
-/* Local fonts — no network dependency */
-@font-face { font-family: 'Space Grotesk'; font-weight: 400; src: url('./fonts/SpaceGrotesk-Regular.ttf') format('truetype'); }
-@font-face { font-family: 'Space Grotesk'; font-weight: 500; src: url('./fonts/SpaceGrotesk-Medium.ttf') format('truetype'); }
-@font-face { font-family: 'Space Grotesk'; font-weight: 600; src: url('./fonts/SpaceGrotesk-SemiBold.ttf') format('truetype'); }
-@font-face { font-family: 'Space Grotesk'; font-weight: 700; src: url('./fonts/SpaceGrotesk-Bold.ttf') format('truetype'); }
-@font-face { font-family: 'Inter'; font-weight: 400; src: url('./fonts/Inter-Regular.ttf') format('truetype'); }
-@font-face { font-family: 'Inter'; font-weight: 500; src: url('./fonts/Inter-Medium.ttf') format('truetype'); }
-
 :root {
-  /* Surface hierarchy */
-  --surface:                   #060e20;
-  --surface-container-lowest:  #000000;
-  --surface-container-low:     #0a1428;
-  --surface-container:         #0f1930;
-  --surface-container-high:    #141e38;
-  --surface-container-highest: #192540;
-  --surface-bright:            #ffffff;
-  --surface-variant:           rgba(25, 37, 64, 0.75);
-  --surface-tint:              #ba9eff;
+  /* Text — system-native opacity layering */
+  --text-primary:    rgba(255, 255, 255, 0.90);
+  --text-secondary:  rgba(255, 255, 255, 0.55);
+  --text-tertiary:   rgba(255, 255, 255, 0.35);
 
-  /* Text */
-  --on-surface:                #dee5ff;
-  --on-surface-variant:        #8892ab;
-  --on-primary-container:      #c4d0ff;
+  /* Surfaces */
+  --hover:           rgba(255, 255, 255, 0.06);
+  --active:          rgba(255, 255, 255, 0.10);
+  --divider:         rgba(255, 255, 255, 0.08);
 
   /* Accent */
-  --primary:                   #ba9eff;
-  --primary-dim:               #8b6fcc;
-  --primary-container:         rgba(186, 158, 255, 0.12);
-  --secondary:                 #699cff;
-  --secondary-dim:             #4a7ad9;
-
-  /* Gradient */
-  --gradient-accent:           linear-gradient(135deg, #699cff, #ba9eff);
-
-  /* Outline */
-  --outline-variant:           rgba(136, 146, 171, 0.15);
+  --accent:          #64d2a0;
+  --accent-dim:      rgba(100, 210, 160, 0.15);
 
   /* Sizing */
-  --radius-sm:   0.25rem;  /* 4px */
-  --radius-md:   0.375rem; /* 6px */
-  --radius-lg:   0.5rem;   /* 8px */
-  --radius-full: 9999px;
+  --radius-sm:  6px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
 }
 
 * {
@@ -60,9 +37,9 @@ html {
 
 body {
   background: transparent !important;
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
   font-size: 13px;
-  color: var(--on-surface);
+  color: var(--text-primary);
   user-select: none;
   cursor: default;
   -webkit-font-smoothing: antialiased;
@@ -76,9 +53,37 @@ body {
   height: calc(100vh - 16px);
   display: flex;
   flex-direction: column;
-  background: rgba(6, 14, 32, 0.45);
-  border-radius: 12px;
+  background: rgba(30, 30, 30, 0.35);
+  border-radius: var(--radius-lg);
   overflow: hidden;
+}
+
+/* --- Header --- */
+
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+}
+
+#header .app-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+#header .version {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* --- Divider --- */
+
+.divider {
+  height: 1px;
+  background: var(--divider);
+  margin: 0 12px;
 }
 
 /* --- State cards (permission, empty) --- */
@@ -94,92 +99,85 @@ body {
 }
 
 .state-icon {
-  font-size: 36px;
-  margin-bottom: 16px;
-  opacity: 0.5;
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.4;
 }
 
 .state-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--on-surface);
-  margin-bottom: 8px;
+  color: var(--text-primary);
+  margin-bottom: 6px;
 }
 
 .state-desc {
   font-size: 12px;
-  color: var(--on-surface-variant);
+  color: var(--text-secondary);
   margin-bottom: 20px;
   line-height: 1.5;
 }
 
 .action-btn {
-  background: var(--gradient-accent);
-  color: var(--surface);
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 8px 20px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 7px 18px;
   font-size: 12px;
-  font-weight: 600;
-  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 500;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: background 0.15s;
 }
 
 .action-btn:hover {
-  opacity: 0.85;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 /* --- Project list --- */
 
 #project-list {
   flex: 1;
-  padding: 8px 0;
+  padding: 6px 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 .app-group {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .app-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px 6px 16px;
-  font-family: 'Space Grotesk', sans-serif;
+  padding: 8px 16px 4px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--on-surface-variant);
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .app-header img {
-  width: 16px;
-  height: 16px;
-  border-radius: var(--radius-sm);
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
 }
 
 /* Window count badge */
 .app-header .badge {
   margin-left: auto;
-  font-family: 'Space Grotesk', sans-serif;
   font-size: 10px;
-  font-weight: 600;
-  color: var(--on-primary-container);
-  background: var(--primary-container);
-  padding: 1px 7px;
-  border-radius: var(--radius-full);
+  font-weight: 500;
+  color: var(--text-tertiary);
 }
 
 .project-row {
   display: flex;
   align-items: center;
   padding: 0 12px 0 16px;
-  height: 34px;
+  height: 32px;
   cursor: pointer;
   border-radius: var(--radius-sm);
   margin: 1px 6px;
@@ -189,28 +187,29 @@ body {
 
 .project-row:hover,
 .project-row.focused {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--hover);
 }
 
-/* Active indicator: gradient pill on left edge */
+/* Active indicator: subtle accent dot */
 .project-row .indicator {
-  width: 2px;
-  height: 16px;
-  border-radius: var(--radius-full);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
   margin-right: 10px;
   flex-shrink: 0;
   background: transparent;
 }
 
 .project-row.active .indicator {
-  background: var(--gradient-accent);
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(100, 210, 160, 0.4);
 }
 
 .project-name {
   flex: 1;
   font-size: 13px;
   font-weight: 500;
-  color: var(--on-surface);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -218,11 +217,11 @@ body {
 
 .project-path {
   font-size: 11px;
-  color: var(--on-surface-variant);
+  color: var(--text-tertiary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
+  max-width: 130px;
   text-align: right;
   margin-left: 8px;
   font-variant-numeric: tabular-nums;
@@ -232,26 +231,23 @@ body {
 
 #footer {
   padding: 8px 16px;
-  font-family: 'Space Grotesk', sans-serif;
   font-size: 10px;
   font-weight: 500;
-  color: var(--on-surface-variant);
+  color: var(--text-tertiary);
   text-align: center;
-  background: rgba(6, 14, 32, 0.25);
 }
 
 /* --- Keyboard focus --- */
 
 .project-row:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 0 0 1px var(--outline-variant);
+  background: var(--hover);
 }
 
 /* --- Scrollbar --- */
 
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -259,10 +255,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(186, 158, 255, 0.15);
-  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(186, 158, 255, 0.3);
+  background: rgba(255, 255, 255, 0.20);
 }
