@@ -51,6 +51,17 @@ You have 6+ VSCode windows open. Cmd+Tab shows 30 windows across all apps. Findi
 
 ## Install
 
+### Via Homebrew (Recommended)
+
+```bash
+brew tap kay404/tap
+brew install --cask mux
+```
+
+### Manual Download
+
+Download the latest `.dmg` from the [Releases](https://github.com/kay404/Mux/releases) page. Open it and drag **Mux.app** to `/Applications`.
+
 ### Build from source
 
 ```bash
@@ -60,7 +71,7 @@ npm install
 npm run tauri build
 ```
 
-The built app is at `src-tauri/target/release/bundle/macos/Mux.app`. Drag it to `/Applications`.
+The built app is at `src-tauri/target/release/bundle/macos/Mux.app`.
 
 ## How It Works
 

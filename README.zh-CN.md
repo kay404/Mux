@@ -51,6 +51,17 @@ macOS 菜单栏应用，一键切换开发工具的项目窗口。
 
 ## 安装
 
+### 通过 Homebrew 安装（推荐）
+
+```bash
+brew tap kay404/tap
+brew install --cask mux
+```
+
+### 手动下载
+
+从 [Releases](https://github.com/kay404/Mux/releases) 页面下载最新的 `.dmg` 文件，打开后将 **Mux.app** 拖入 `/Applications`。
+
 ### 从源码构建
 
 ```bash
@@ -60,7 +71,7 @@ npm install
 npm run tauri build
 ```
 
-构建产物位于 `src-tauri/target/release/bundle/macos/Mux.app`，拖到 `/Applications` 即可。
+构建产物位于 `src-tauri/target/release/bundle/macos/Mux.app`。
 
 ### 开发模式
 
